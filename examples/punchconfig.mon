@@ -1,0 +1,54 @@
+user {
+  name "Rabbit Wilson"
+  address {
+    street "123 Pleasonton Ct"
+    city "Swingleton"
+    state "MI"
+    zip "22222"
+  }
+}
+
+clients {
+  Coolcom {
+    contact "Berd Bro"
+    company "Coolcom"
+    address {
+      street "12345 Noiceville Rd"
+      city "Spoiks"
+      state "WA"
+      zip "99999"
+    }
+  }
+}
+
+projects {
+  my-project {
+    name "My Project"
+    description "This is a description"
+    hourlyRate 30
+    client @clients/Coolcom
+    plugins {
+      very-nested {
+        subdomain "test"
+        project "testtest"
+      }
+    }
+  }
+}
+
+sync {
+  autoSync on
+  services [
+    {
+      name "S3"
+      bucket "punchbucket"
+      credentials {
+        accessKeyId "XXX"
+        secretAccessKey "XXX"
+      }
+    }
+  ]
+}
+
+invoiceAPI "http://localhost:8088/v1/"
+textColors off

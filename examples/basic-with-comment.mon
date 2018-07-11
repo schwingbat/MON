@@ -1,0 +1,4 @@
+# This is a comment
+key "value"
+number 5
+# This should also be ignored

@@ -1,0 +1,26 @@
+string "test"
+number 5  
+decimal 123.45
+empty-array []
+inline-num-array [1, 2, 3]
+multiline-array [
+  1
+  2
+  3
+]
+string-array ["string", "string2"]
+empty-object {}
+object-with-commas { 1 on, 2 "test" }
+object-with-breaks {
+ 1 on
+ 2 off
+}
+object-with-both {
+ 1 on,
+ 2 5,
+}
+#comment
+booleanOn on
+booleanOff off
+booleanTrue true
+booleanFalse false
