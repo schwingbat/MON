@@ -3,7 +3,8 @@
     "displayName": "MON",
     "description": "Minimal Object Notation language support",
     "version": "0.0.1",
-    "publisher": "TonyMcCoy",
+    "publisher": "schwingbat",
+    "repository": "https://github.com/schwingbat/MON",
     "engines": {
         "vscode": "^1.25.0"
     },
