@@ -1,0 +1,97 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "MON (Minimal Object Notation)",
+	"patterns": [
+		{ "include": "#constant" },
+		{ "include": "#key" },
+		{ "include": "#value" },
+		{ "include": "#comment" }
+	],
+	"repository": {
+		"key": {
+			"patterns": [{
+				"name": "support.type.property-name.mon",
+				"match": "\\b[a-zA-Z0-9._-]+\\b"
+			}]
+		},
+		"value": {
+			"patterns": [
+				{ "include": "#constant" },
+				{ "include": "#float" },
+				{ "include": "#integer" },
+				{ "include": "#string" },
+				{ "include": "#object" },
+				{ "include": "#array" },
+				{ "include": "#reference" }
+			]
+		},
+		"constant": {
+			"patterns": [{
+				"name": "constant.language.mon",
+				"match": "\\b(true|false|on|off)\\b"
+			}, {
+				"name": "constant.numeric.mon",
+				"match": "\\b[0-9._]+\\b"
+			}]
+		},
+		"object": {
+			"name": "meta.structure.dictionary.mon",
+			"beginCaptures": { "0": "punctuation.definition.dictionary.begin.mon" },
+			"endCaptures": { "0": "punctuation.definition.dictionary.end.mon" },
+			"begin": "{",
+			"end": "}",
+			"patterns": [
+				{ "include": "#key" },
+				{ "include": "#comment" },
+				{ "include": "#value" }
+			]
+		},
+		"array": {
+			"name": "meta.structure.array.mon",
+			"beginCaptures": { "0": "punctuation.definition.array.begin.mon" },
+			"endCaptures": { "0": "punctuation.definition.array.end.mon" },
+			"begin": "\\[",
+			"end": "\\]",
+			"patterns": [
+				{ "include": "#comment" },
+				{ "include": "#value" }
+			]
+		},
+		"comment": {
+			"patterns": [{
+				"name": "comment.mon",
+				"match": "#.*?(\n|,)"
+			}]
+		},
+		"reference": {
+			"patterns": [{
+				"name": "variable.parameter.reference.mon",
+				"match": "@[a-zA-Z0-9._/-]+"
+			}]
+		},
+		"string": {
+			"name": "string.quoted.double.mon",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.mon",
+					"match": "\\\\."
+				}
+			]
+		},
+		"integer": {
+			"patterns": [{
+				"name": "constant.numeric.integer.mon",
+				"match": "\\b[0-9_]+\\b"
+			}]
+		},
+		"float": {
+			"patterns": [{
+				"name": "constant.numeric.float.mon",
+				"match": "\\b[0-9_]+.[0-9_]+\\b"
+			}]
+		}
+	},
+	"scopeName": "source.mon"
+}

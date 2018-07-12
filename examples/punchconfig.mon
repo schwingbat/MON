@@ -25,7 +25,7 @@ projects {
   my-project {
     name "My Project"
     description "This is a description"
-    hourlyRate 30
+    hourlyRate 30.00
     client @clients/Coolcom
     plugins {
       very-nested {
@@ -33,6 +33,12 @@ projects {
         project "testtest"
       }
     }
+  }
+
+  other-project {
+    name "Other"
+    hourlyRate 52
+    client @clients/Coolcom
   }
 }
 
@@ -50,5 +56,5 @@ sync {
   ]
 }
 
-invoiceAPI "http://localhost:8088/v1/"
+# invoiceAPI "http://localhost:8088/v1/"
 textColors off
