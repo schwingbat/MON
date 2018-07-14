@@ -9,6 +9,26 @@ function indicesDebug (fn, state) {
   })
 }
 
+function pointToErrorText (state, message) {
+  const lines = state.input.split('\n')
+  const [lineNum, colNum] = state.position.split(':').map(n => Number(n))
+  let line = ''
+
+  line += lineNum + '  ' + lines[lineNum - 1]
+  line += '\n'.padEnd(colNum + 1 + lineNum.toString().length) + '^'
+
+  return line
+}
+
+function skipUntil (state, char) {
+  while (state.pos < state.input.length) {
+    if (state.input[state.pos] === char) {
+      state.mark = state.pos + 1
+    }
+    state.pos += 1
+  }
+}
+
 function string (state) {
   while (state.pos < state.input.length) {
     switch (state.input[state.pos]) {
@@ -26,13 +46,23 @@ function string (state) {
 function number (state) {
   while (state.pos < state.input.length) {
     switch (state.input[state.pos]) {
-      case '\n':
-      case ',':
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+      case '.':
+      case '_':
+        break
+      default:
         let num = state.buffer
         state.mark = state.pos + 1
         return Number(num.replace(/_/g, '')) // Allow underscores for readability
-      default:
-        break
     }
     state.pos += 1
   }
@@ -73,18 +103,12 @@ function object (state) {
   let parsed = {}
 
   while (state.pos < state.input.length) {
-    // indicesDebug('object', state)
+    indicesDebug('object', state)
     switch (state.input[state.pos]) {
       case '}':
         state.pos += 1
         state.mark = state.pos + 1
         return parsed
-      // case '\n':
-      // case ',':
-      //   // if (Object.keys(parsed).length === 0) {
-      //   //   state.mark = state.pos + 1
-      //   // }
-      //   break;
       case ' ':
       case '\t':
         state.mark = state.pos + 1
@@ -110,6 +134,7 @@ function boolean (state) {
         state.mark = state.pos + 1
         return false
       default:
+        console.log(pointToErrorText(state, 'Problem'))
         throw new Error(`Unrecognized boolean value "${state.buffer.trim()}" at (${state.position})`)
     }
   }
@@ -119,6 +144,8 @@ function boolean (state) {
       case '\n':
       case ',':
         return translate(state.buffer)
+      default:
+        break
     }
     state.pos += 1
   }
@@ -154,13 +181,12 @@ function reference (state) {
   }
 }
 
-function comment (state) {
-  // Roll until the next line break.
-  while (state.pos < state.input.length && state.input[state.pos] !== '\n') {
-    state.pos += 1
+function kvPair (state) {
+  while (state.pos < state.input.length) {
+    switch (state.input[state.pos]) {
+      case ''
+    }
   }
-  // state.pos += 1
-  state.mark = state.pos + 1
 }
 
 function key (state, obj) {
@@ -177,17 +203,15 @@ function key (state, obj) {
         let mark = state.mark
         state.pos += 1
         state.mark = state.pos
-        const k = state.input.slice(mark, state.pos - 1)
-        obj[k] = value(state)
-        return
+        return state.input.slice(mark, state.pos - 1)
       case '#':
-        comment(state)
+        skipUntil('\n')
         break
       case '\n':
       case ',':
         state.pos += 1
         state.mark = state.pos
-        return
+        return state.input.slice(mark, state.pos - 1)
       default:
         break
     }
@@ -197,7 +221,7 @@ function key (state, obj) {
 
 function value (state) {
   while (state.pos < state.input.length) {
-    // indicesDebug('value', state)
+    indicesDebug('value', state)
     switch (state.input[state.pos]) {
       case '[':
         state.pos += 1
@@ -220,8 +244,12 @@ function value (state) {
         state.pos += 1
         state.mark = state.pos
         break
+      case '\n':
+        state.pos += 1
+        state.mark = state.pos
+        return
       default:
-        // indicesDebug('default', state)
+        indicesDebug('default', state)
         if (/\d/.test(state.input[state.pos])) {
           return number(state)
         } else {
@@ -258,8 +286,14 @@ module.exports = function (input) {
     }
   }
 
+  /*
+   * Start by parsing the file as an object.
+   * An object contains a list of key-value pairs.
+   * The parser will recursively figure out the rest.
+   */
+
   while (state.pos < state.input.length) {
-    key(state)
+    kvPair(state)
     state.pos += 1
   }
 

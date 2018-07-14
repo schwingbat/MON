@@ -1,14 +1,17 @@
 user {
   name "Rabbit Wilson"
-  address {
-    street "123 Pleasonton Ct"
-    city "Swingleton"
-    state "MI"
-    zip "22222"
-  }
+  address "
+    123 Pleasonton Ct
+    Swingleton, MI 22222
+  "
+  address-2 " # with comments inside
+    123 Pleasonton Ct
+    # Swingleton, MI 22222
+  "
 }
 
 clients {
+  # This is a comment with, commas, in it
   Coolcom {
     contact "Berd Bro"
     company "Coolcom"
