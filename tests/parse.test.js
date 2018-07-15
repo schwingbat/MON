@@ -24,6 +24,12 @@ describe('MON.parse', () => {
     })
   })
 
+  it('sets multiline string indentation based on first non-whitespace character', () => {
+    expect(MON.parse('multiline "\n  this is\n  some indented\n    text\n"')).toEqual({
+      multiline: "this is\nsome indented\n  text"
+    })
+  })
+
   it('parses true/false booleans', () => {
     expect(MON.parse('is_true true')).toEqual({ is_true: true })
 
@@ -107,7 +113,7 @@ describe('MON.parse', () => {
       array: [1, 2, 3, "five"]
     })
 
-    expect(MON.parse(`array [1 2 3]`)).toEqual({
+    expect(MON.parse(`array [1  2      3]`)).toEqual({
       array: [1, 2, 3]
     })
 
@@ -122,6 +128,15 @@ describe('MON.parse', () => {
         { five: 'six' }
       ]
     })
+  })
+
+  it('handles comments in arrays', () => {
+    expect(MON.parse(`array ["one", # comment,,,fdaw\n"two", "three"]`)).toEqual({
+      array: ["one", "two", "three"]
+    })
+    // expect(MON.parse(`array ["one", # comment,,,fdaw\n#"two",\n"three"]`)).toEqual({
+    //   array: ["one", "three"]
+    // })
   })
 
   it('ignores comments', () => {

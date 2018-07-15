@@ -98,12 +98,12 @@ array [
 array [1 2 3]
 array [1, 2, 3]
 array [true true false]
-array [[1 2] [3 4] { five "six" }]
+array [[1 2] [3 [4 5]] { six "seven" }]
 ```
 
 #### Strings
 
-Strings are double quote delimited sequences of characters which can contain line breaks. Some languages have different kinds of strings that allow multiple lines. Multiline strings in MON are just strings with... multiple lines.
+Strings are double quote delimited sequences of characters which can contain line breaks. Some languages have different kinds of strings that allow multiple lines. Multiline strings in MON are just strings... with... multiple lines.
 
 ```mon
 key "this is a string value"

@@ -3,6 +3,7 @@ number 5
 decimal 123.45
 empty-array []
 inline-num-array [1, 2, 3]
+look-ma-no-commas [1 2 3]
 multiline-array [
   1
   2

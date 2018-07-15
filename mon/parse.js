@@ -85,11 +85,31 @@ function takeWhile (state, regex) {
 }
 
 function string (state) {
-  const val = takeUntil(state, /"/)
+  let val = takeUntil(state, /"/)
+    .replace(/#.*?\n/, '') // Get rid of any comments
   state.mark()
   state.pos++
 
-  return val.replace(/#.*?\n/, '') // Get rid of any comments
+  // Normalize multiline indentation
+  if (val.indexOf('\n') > -1) {
+    let lines = val.split('\n').filter(l => l !== '')
+    let spaces = lines[0].match(/^(\s+)/)
+    let indent = spaces
+      ? spaces[1].length
+      : 0
+  
+    return lines.map(line => {
+      let c = 0
+      let l = line
+      while (c < indent && l[0] === ' ') {
+        l = l.slice(1)
+        c++
+      }
+      return l
+    }).join('\n')
+  } else {
+    return val
+  } 
 }
 
 function number (state) {
@@ -124,12 +144,19 @@ function array (state) {
     skipWhile(state, /[\s\t,]/)
     state.mark()
 
+    if (state.input[state.pos] === '#') {
+      skipUntil(state, /\n/)
+      state.mark()
+    }
+
     if (state.input[state.pos] === ']') {
       state.pos++
       return values
     } else {
       let val = value(state)
-      values.push(val)
+      if (val !== undefined) {
+        values.push(val)
+      }
     }
   }
 
@@ -149,7 +176,7 @@ function boolean (state) {
         return false
       default:
         console.log(pointToErrorText(state))
-        throw new Error(`Unrecognized boolean value "${state.buffer.trim()}" at (${state.position})`)
+        throw new Error(`Unrecognized boolean value "${state.buffer}" at (${state.position})`)
     }
   }
 
@@ -234,6 +261,7 @@ function value (state) {
         state.pos += 1
         state.mark()
         return reference(state)
+      case '':
       case ' ':
       case '\t':
         state.pos += 1
