@@ -1,12 +1,26 @@
+const DEBUG = true
+
 function indicesDebug (fn, state) {
-  console.log(fn, {
-    length: state.input.length,
-    pos: state.pos,
-    mark: state.mark,
-    position: state.position,
-    char: state.char,
-    buffer: state.input.slice(state.mark, state.pos)
-  })
+  if (DEBUG) {
+    console.log(fn, {
+      length: state.input.length,
+      pos: state.pos,
+      mark: state.marker,
+      position: state.position,
+      char: state.char,
+      tape: state.input.slice(Math.max(0, state.marker - 15), state.marker)
+            + state.input.slice(state.marker, state.pos)
+            + '_'
+            + state.input.slice(state.pos + 1, Math.min(state.input.length, state.pos + 15)),
+      buffer: state.input.slice(state.marker, state.pos)
+    })
+  }
+}
+
+const debug = DEBUG ? {
+  log: console.log.bind(console)
+} : {
+  log: () => {}
 }
 
 function pointToErrorText (state, message) {
@@ -20,22 +34,59 @@ function pointToErrorText (state, message) {
   return line
 }
 
-function skipUntil (state, char) {
+function skipUntil (state, regex) {
   while (state.pos < state.input.length) {
-    if (state.input[state.pos] === char) {
-      state.mark = state.pos + 1
+    if (regex.test(state.input[state.pos])) {
+      return
     }
     state.pos += 1
   }
+}
+
+function skipUntilAfter (state, regex) {
+  skipUntil(state, regex)
+  if (regex.test(state.input[state.pos])) {
+    state.pos++
+  }
+}
+
+function skipWhile (state, regex) {
+  while (state.pos < state.input.length) {
+    if (!regex.test(state.input[state.pos])) {
+      return
+    }
+    state.pos++
+  }
+}
+
+function takeUntil (state, regex) {
+  if (typeof regex === 'string') {
+    regex = new RegExp(regex)
+  }
+  while (state.pos < state.input.length && !regex.test(state.input[state.pos])) {
+    state.pos += 1
+  }
+  return state.buffer
+}
+
+function takeWhile (state, regex) {
+  if (typeof regex === 'string') {
+    regex = new RegExp(regex)
+  }
+  while (state.pos < state.input.length && regex.test(state.input[state.pos])) {
+    state.pos += 1
+  }
+  return state.buffer
 }
 
 function string (state) {
   while (state.pos < state.input.length) {
     switch (state.input[state.pos]) {
       case '"':
-        let oldMark = state.mark
-        state.mark = state.pos + 1
+        let oldMark = state.marker
+        state.marker = state.pos + 1
         return state.input.slice(oldMark, state.pos)
+          .replace(/#.*?\n/, '') // Get rid of any comments
       default:
         break
     }
@@ -60,12 +111,12 @@ function number (state) {
       case '_':
         break
       default:
-        let num = state.buffer
-        state.mark = state.pos + 1
-        return Number(num.replace(/_/g, '')) // Allow underscores for readability
+        return Number(state.buffer.replace(/_/g, '')) // Allow underscores for readability
     }
     state.pos += 1
   }
+
+  return Number(state.buffer.replace(/_/g, ''))
 }
 
 function array (state) {
@@ -76,46 +127,24 @@ function array (state) {
       case ']':
         if (state.buffer.trim() !== '') {
           // indicesDebug('end of array', state)
-          state.pos = state.mark
+          state.pos = state.marker
           values.push(value(state))
-          state.mark = state.pos + 1
+          state.pos++
+          state.marker = state.pos
         }
         return values
       case ' ':
       case '\t':
-        state.mark = state.pos + 1
+        state.marker = state.pos + 1
         break
       case '\n':
       case ',':
         if (state.buffer.trim() !== '') {
           // indicesDebug('array sep', state)
-          state.pos = state.mark
+          state.pos = state.marker
           values.push(value(state))
-          state.mark = state.pos + 1
+          state.marker = state.pos + 1
         }
-        break
-    }
-    state.pos += 1
-  }
-}
-
-function object (state) {
-  let parsed = {}
-
-  while (state.pos < state.input.length) {
-    indicesDebug('object', state)
-    switch (state.input[state.pos]) {
-      case '}':
-        state.pos += 1
-        state.mark = state.pos + 1
-        return parsed
-      case ' ':
-      case '\t':
-        state.mark = state.pos + 1
-        break;
-      default:
-        key(state, parsed)
-        state.pos -= 1
         break
     }
     state.pos += 1
@@ -127,14 +156,14 @@ function boolean (state) {
     switch (buffer.trim().toLowerCase()) {
       case 'true':
       case 'on':
-        state.mark = state.pos + 1
+        state.marker = state.pos
         return true
       case 'false':
       case 'off':
-        state.mark = state.pos + 1
+        state.marker = state.pos
         return false
       default:
-        console.log(pointToErrorText(state, 'Problem'))
+        console.log(pointToErrorText(state))
         throw new Error(`Unrecognized boolean value "${state.buffer.trim()}" at (${state.position})`)
     }
   }
@@ -147,7 +176,7 @@ function boolean (state) {
       default:
         break
     }
-    state.pos += 1
+    state.pos++
   }
   if (state.pos === state.input.length) {
     return translate(state.buffer)
@@ -155,118 +184,130 @@ function boolean (state) {
 }
 
 function reference (state) {
-  let parts = []
-  let value = state.parsed
+  let source = takeWhile(state, /[A-Za-z0-9/._-]/).split('/')
+  state.mark()
+
+  return {
+    __is_ref: true,
+    source,
+    parent: null,
+    key: null
+  }
+}
+
+function object (state) {
+  let parsed = {}
+  const separator = /[\n\s\t,]/
 
   while (state.pos < state.input.length) {
-    switch (state.input[state.pos]) {
-      case '/':
-        parts.push(state.buffer)
-        state.mark = state.pos + 1
-        value = value[parts[parts.length - 1]]
-        break
-      case '\n':
-      case ',':
-        parts.push(state.buffer)
-        state.mark = state.pos + 1
-        value = value[parts[parts.length - 1]]
-        // TODO: Throw an error if reference doesn't exist
-        return value === state.parsed
-          ? null
-          : value
-      default:
-        break
+    skipWhile(state, separator)
+    state.mark()
+
+    if (state.input[state.pos] === '}') {
+      break
+    } else if (state.input[state.pos] === '#') {
+      skipUntil(state, /\n/)
+    } else {
+      const [k, v] = kvPair(state)
+      if (v && v.__is_ref) {
+        v.parent = parsed
+        v.key = k
+        state.refs.push(v)
+      }
+      parsed[k] = v
+      state.pos += 1
     }
-    state.pos += 1
   }
+
+  return parsed
 }
 
 function kvPair (state) {
-  while (state.pos < state.input.length) {
-    switch (state.input[state.pos]) {
-      case ''
-    }
-  }
-}
+  const separator = /[\n\s\t,]/
 
-function key (state, obj) {
-  if (!obj) {
-    obj = state.parsed
-  }
+  const k = takeWhile(state, /[A-Za-z0-9_.-]/i).trim()
+  state.mark()
 
-  while (state.pos < state.input.length) {
-    // indicesDebug('key', state)
-    switch (state.input[state.pos]) {
-      case ' ':
-      case '\t':
-        // end of key
-        let mark = state.mark
-        state.pos += 1
-        state.mark = state.pos
-        return state.input.slice(mark, state.pos - 1)
-      case '#':
-        skipUntil('\n')
-        break
-      case '\n':
-      case ',':
-        state.pos += 1
-        state.mark = state.pos
-        return state.input.slice(mark, state.pos - 1)
-      default:
-        break
-    }
-    state.pos += 1
-  }
+  skipWhile(state, separator)
+  state.mark()
+
+  const v = value(state)
+  state.mark()
+
+  return [k, v]
 }
 
 function value (state) {
+  // indicesDebug('start of value', state)
+
   while (state.pos < state.input.length) {
-    indicesDebug('value', state)
     switch (state.input[state.pos]) {
       case '[':
         state.pos += 1
-        state.mark = state.pos
+        state.mark()
         return array(state)
       case '{':
         state.pos += 1
-        state.mark = state.pos
+        state.mark()
         return object(state)
       case '"':
         state.pos += 1
-        state.mark = state.pos
+        state.mark()
         return string(state)
       case '@':
         state.pos += 1
-        state.mark = state.pos
+        state.mark()
         return reference(state)
       case ' ':
       case '\t':
         state.pos += 1
-        state.mark = state.pos
+        state.mark()
         break
       case '\n':
         state.pos += 1
-        state.mark = state.pos
+        state.mark()
         return
       default:
-        indicesDebug('default', state)
-        if (/\d/.test(state.input[state.pos])) {
+        if (/\d+(\.\d+)?/.test(state.input[state.pos])) {
+          state.mark()
+          // indicesDebug('number', state)
           return number(state)
         } else {
+          state.mark()
+          // indicesDebug('boolean', state)
           return boolean(state)
         }
     }
   }
+
+  // indicesDebug('endOfValue', state)
+}
+
+function dereference (state, ref) {
+  let val = state.parsed
+
+  ref.source.forEach(key => {
+    if (val[key]) {
+      val = val[key]
+    } else {
+      // Throw an error because the path doesn't exist.
+    }
+  })
+
+  ref.parent[ref.key] = val
 }
 
 module.exports = function (input) {
   let state = {
     pos: 0,
-    mark: 0,
+    marker: 0,
     input,
-    parsed: {},
+    refs: [],
+    mark: function (offset = 0) {
+      this.marker = this.pos + offset
+    },
     get buffer () {
-      return this.input.slice(this.mark, this.pos)
+      return this.input.slice(this.marker, this.pos)
     },
     get char () {
       return this.input[this.pos]
@@ -292,10 +333,11 @@ module.exports = function (input) {
    * The parser will recursively figure out the rest.
    */
 
-  while (state.pos < state.input.length) {
-    kvPair(state)
-    state.pos += 1
-  }
+  state.parsed = object(state)
+
+  // Resolve references
+
+  state.refs.forEach(ref => dereference(state, ref))
 
   // console.log(state)
 

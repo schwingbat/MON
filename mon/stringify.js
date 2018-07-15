@@ -15,7 +15,7 @@ function write (obj, level = 0) {
     obj.forEach(val => {
       str += indent(level + 1) + write(val, level + 1) + '\n'
     })
-    str += ']'
+    str += indent(level - 1) + ']'
   } else if (typeof obj === 'object') {
     let i = 0
     let length = Object.keys(obj).length

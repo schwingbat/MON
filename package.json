@@ -11,6 +11,7 @@
   "author": "Tony McCoy <tony@ratwizard.io>",
   "license": "MIT",
   "devDependencies": {
+    "chalk": "^2.4.1",
     "jest": "^23.4.1"
   }
 }
