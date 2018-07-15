@@ -1,0 +1,27 @@
+{
+    "name": "mon",
+    "displayName": "MON",
+    "description": "Minimal Object Notation language support",
+    "version": "0.0.1",
+    "publisher": "schwingbat",
+    "repository": "https://github.com/schwingbat/MON",
+    "engines": {
+        "vscode": "^1.25.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "mon",
+            "aliases": ["MON", "mon"],
+            "extensions": [".mon"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "mon",
+            "scopeName": "source.mon",
+            "path": "./syntaxes/mon.tmLanguage.json"
+        }]
+    }
+}
