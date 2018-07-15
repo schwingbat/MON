@@ -63,9 +63,14 @@ function takeUntil (state, regex) {
   if (typeof regex === 'string') {
     regex = new RegExp(regex)
   }
-  while (state.pos < state.input.length && !regex.test(state.input[state.pos])) {
-    state.pos += 1
+  while (state.pos < state.input.length) {
+    if (regex.test(state.input[state.pos])) {
+      return state.buffer
+    } else {
+      state.pos++
+    }
   }
+
   return state.buffer
 }
 
@@ -80,18 +85,11 @@ function takeWhile (state, regex) {
 }
 
 function string (state) {
-  while (state.pos < state.input.length) {
-    switch (state.input[state.pos]) {
-      case '"':
-        let oldMark = state.marker
-        state.marker = state.pos + 1
-        return state.input.slice(oldMark, state.pos)
-          .replace(/#.*?\n/, '') // Get rid of any comments
-      default:
-        break
-    }
-    state.pos += 1
-  }
+  const val = takeUntil(state, /"/)
+  state.mark()
+  state.pos++
+
+  return val.replace(/#.*?\n/, '') // Get rid of any comments
 }
 
 function number (state) {
@@ -123,32 +121,19 @@ function array (state) {
   let values = []
 
   while (state.pos < state.input.length) {
-    switch (state.input[state.pos]) {
-      case ']':
-        if (state.buffer.trim() !== '') {
-          // indicesDebug('end of array', state)
-          state.pos = state.marker
-          values.push(value(state))
-          state.pos++
-          state.marker = state.pos
-        }
-        return values
-      case ' ':
-      case '\t':
-        state.marker = state.pos + 1
-        break
-      case '\n':
-      case ',':
-        if (state.buffer.trim() !== '') {
-          // indicesDebug('array sep', state)
-          state.pos = state.marker
-          values.push(value(state))
-          state.marker = state.pos + 1
-        }
-        break
+    skipWhile(state, /[\s\t,]/)
+    state.mark()
+
+    if (state.input[state.pos] === ']') {
+      state.pos++
+      return values
+    } else {
+      let val = value(state)
+      values.push(val)
     }
-    state.pos += 1
   }
+
+  return values
 }
 
 function boolean (state) {
@@ -168,19 +153,8 @@ function boolean (state) {
     }
   }
 
-  while (state.pos < state.input.length) {
-    switch (state.input[state.pos]) {
-      case '\n':
-      case ',':
-        return translate(state.buffer)
-      default:
-        break
-    }
-    state.pos++
-  }
-  if (state.pos === state.input.length) {
-    return translate(state.buffer)
-  }
+  const val = takeWhile(state, /[a-z]/)
+  return translate(val)
 }
 
 function reference (state) {
@@ -204,6 +178,8 @@ function object (state) {
     state.mark()
 
     if (state.input[state.pos] === '}') {
+      state.pos++
+      state.mark()
       break
     } else if (state.input[state.pos] === '#') {
       skipUntil(state, /\n/)

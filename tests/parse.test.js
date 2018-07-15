@@ -98,6 +98,32 @@ describe('MON.parse', () => {
     expect(MON.parse('array [1, 2, 3, "five"]')).toEqual({ array: [1, 2, 3, "five"] })
   })
 
+  it('handles space-separated arrays', () => {
+    expect(MON.parse(`array ["six" "seven" "eight" "nine"]`)).toEqual({
+      array: ["six", "seven", "eight", "nine"]
+    })
+
+    expect(MON.parse(`array [1 2 3 "five"]`)).toEqual({
+      array: [1, 2, 3, "five"]
+    })
+
+    expect(MON.parse(`array [1 2 3]`)).toEqual({
+      array: [1, 2, 3]
+    })
+
+    expect(MON.parse(`bools [true true false]`)).toEqual({
+      bools: [true, true, false]
+    })
+
+    expect(MON.parse(`composite [[1 2] [3 [4 5]] { five "six" }]`)).toEqual({
+      composite: [
+        [1, 2],
+        [3, [4, 5]],
+        { five: 'six' }
+      ]
+    })
+  })
+
   it('ignores comments', () => {
     expect(MON.parse(`
       # this is [a comment] and should, be 5ignoredfsdfsdf
