@@ -2,7 +2,7 @@
     "name": "mon",
     "displayName": "MON",
     "description": "Minimal Object Notation language support",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "publisher": "schwingbat",
     "repository": "https://github.com/schwingbat/MON",
     "engines": {

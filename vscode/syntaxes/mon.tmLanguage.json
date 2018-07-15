@@ -17,8 +17,7 @@
 		"value": {
 			"patterns": [
 				{ "include": "#constant" },
-				{ "include": "#float" },
-				{ "include": "#integer" },
+				{ "include": "#number" },
 				{ "include": "#string" },
 				{ "include": "#object" },
 				{ "include": "#array" },
@@ -29,9 +28,6 @@
 			"patterns": [{
 				"name": "constant.language.mon",
 				"match": "\\b(true|false|on|off)\\b"
-			}, {
-				"name": "constant.numeric.mon",
-				"match": "\\b[0-9._]+\\b"
 			}]
 		},
 		"object": {
@@ -41,6 +37,8 @@
 			"begin": "{",
 			"end": "}",
 			"patterns": [
+				{ "include": "#number" },
+				{ "include": "#constant" },
 				{ "include": "#key" },
 				{ "include": "#comment" },
 				{ "include": "#value" }
@@ -60,7 +58,7 @@
 		"comment": {
 			"patterns": [{
 				"name": "comment.mon",
-				"match": "#.*?(\n|,)"
+				"match": "#.*?(\n)"
 			}]
 		},
 		"reference": {
@@ -80,16 +78,10 @@
 				}
 			]
 		},
-		"integer": {
+		"number": {
 			"patterns": [{
-				"name": "constant.numeric.integer.mon",
-				"match": "\\b[0-9_]+\\b"
-			}]
-		},
-		"float": {
-			"patterns": [{
-				"name": "constant.numeric.float.mon",
-				"match": "\\b[0-9_]+.[0-9_]+\\b"
+				"name": "constant.numeric.mon",
+				"match": "\\b[0-9_]+(\\.[0-9_]+)?\\b"
 			}]
 		}
 	},
