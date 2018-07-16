@@ -45,6 +45,12 @@ textColors off
 
 ```
 
+## To Do
+
+- [ ] Errors for invalid references
+- [ ] Better errors for invalid syntax
+
+
 ### Comments
 
 Comments start with `#` and continue until the end of the line. My absolute, #1 monumental annoyance with JSON is a lack of comments. Solved.
