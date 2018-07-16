@@ -1,0 +1,12 @@
+objects [1 2 3]
+more-objects [
+  {
+    one 1
+  },
+  {
+    two 2,
+  }
+  "string"
+  5,
+  { three 3 }
+]
